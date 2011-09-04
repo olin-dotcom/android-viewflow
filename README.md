@@ -14,12 +14,18 @@ The component is a [Library Project](http://developer.android.com/guide/developi
         />
 
 The use of `app:sidebuffer` is optional. It defines the number of Views to buffer on each side of the currently shown View. The default sidebuffer is 3, making up a grand total of 7 (3 * 2 + 1) Views loaded at a time (at max).
-To be able to use the more convenient `app:title` the application namespace must be included in the same manner as the android namespace is. Please refer to the layout main.xml in the example project for a full example. Again, note that it's the application namespace and *not* the viewflow namespace that must be referred like `xmlns:app="http://schemas.android.com/apk/res/your.application.package.here"`.
+To be able to use the more convenient `app:sidebuffer` attribute, the application namespace must be included in the same manner as the android namespace is. Please refer to the layout main.xml in the example project for a full example. Again, note that it's the application namespace and *not* the viewflow namespace that must be referred like `xmlns:app="http://schemas.android.com/apk/res/your.application.package.here"`.
 
 ### In your activity
 
     ViewFlow viewFlow = (ViewFlow) findViewById(R.id.viewflow);
     viewFlow.setAdapter(myAdapter);
+    
+Setting a different initial position (0 being default) is as easy as:
+
+    viewFlow.setAdapter(myAdapter, 8);
+    
+Although possible, you should not call `setSelection(...)` immediately after calling `setAdapter(myAdapter)` as that might load unnecessary views giving you a decrease in performance.
 
 ### Listen on screen change events
 
@@ -35,7 +41,7 @@ If you need to listen to screen change events you would want to implement your o
 It is also possible to add a flow view indicator to your layout. The purpose of a `FlowIndicator` is to present a visual representation of where in the item list focus is at. You may either implement a `FlowIndicator` yourself or use an implementation provided by the View Flow library. The View Flow library currently supports the following indicators:
 
 #### Circle Flow Indicator ####
-This indicator shows a circle for each `View` in the adapter with a filled circle for the currently selected view (see screenshot below).
+This indicator shows a circle for each `View` in the adapter with a special circle representing the currently selected view (see screenshot below).
 
 	<org.taptwo.android.widget.CircleFlowIndicator
 		android:padding="10dip" android:layout_height="wrap_content"
@@ -46,6 +52,8 @@ And then you'll need to connect your `ViewFlow` with the `FlowIndicator`:
 
 	CircleFlowIndicator indic = (CircleFlowIndicator) findViewById(R.id.viewflowindic);
 	viewFlow.setFlowIndicator(indic);
+	
+The following attributes are supported: `activeColor`, `inactiveColor`, `activeType` (either fill or stroke), `inactiveType` (either fill or stroke), `fadeOut` (time in ms until indicator fades out, 0 = never), `radius`.
 
 #### Title Flow Indicator ####
 This indicator presents the title of the previous, current and next `View` in the adapter (see screenshot below).
@@ -53,10 +61,11 @@ This indicator presents the title of the previous, current and next `View` in th
 		<org.taptwo.android.widget.TitleFlowIndicator
 			android:id="@+id/viewflowindic" android:layout_height="wrap_content"
 			android:layout_width="fill_parent"
-			app:footerLineHeight="2"
-			app:footerTriangleHeight="10" app:textColor="#FFFFFFFF" app:selectedColor="#FFFFC445"
-			app:footerColor="#FFFFC445" app:titlePadding="10" app:textSize="13" 
-			android:layout_marginTop="10dip" />
+			app:footerLineHeight="2dp"
+			app:footerTriangleHeight="10dp" app:textColor="#FFFFFFFF" app:selectedColor="#FFFFC445"
+			app:footerColor="#FFFFC445" app:titlePadding="10dp" app:textSize="11dp" app:selectedSize="12dp"
+			android:layout_marginTop="10dip"
+			app:clipPadding="5dp" />
 
 And then you'll need to connect your `ViewFlow` with the `FlowIndicator`:
 

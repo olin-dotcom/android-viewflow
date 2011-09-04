@@ -369,6 +369,7 @@ public class ViewFlow extends AdapterView<Adapter> {
 
 			break;
 		case MotionEvent.ACTION_CANCEL:
+			snapToDestination();
 			mTouchState = TOUCH_STATE_REST;
 		}
 		return true;
@@ -463,6 +464,10 @@ public class ViewFlow extends AdapterView<Adapter> {
 
 	@Override
 	public void setAdapter(Adapter adapter) {
+		setAdapter(adapter, 0);
+	}
+	
+	public void setAdapter(Adapter adapter, int initialPosition) {
 		if (mAdapter != null) {
 			mAdapter.unregisterDataSetObserver(mDataSetObserver);
 		}
@@ -474,21 +479,12 @@ public class ViewFlow extends AdapterView<Adapter> {
 			mAdapter.registerDataSetObserver(mDataSetObserver);
 
 		}
-		if (mAdapter.getCount() == 0)
+		if (mAdapter == null || mAdapter.getCount() == 0)
 			return;
-
-		for (int i = 0; i < Math.min(mAdapter.getCount(), mSideBuffer + 1); i++) {
-			mLoadedViews.addLast(makeAndAddView(i, true, null));
-		}
-
-		mCurrentAdapterIndex = 0;
-		mCurrentBufferIndex = 0;
-		requestLayout();
-		setVisibleView(mCurrentBufferIndex, false);
-		if (mViewSwitchListener != null)
-			mViewSwitchListener.onSwitched(mLoadedViews.get(0), 0);
+		
+		setSelection(initialPosition);		
 	}
-	  
+	
 	@Override
 	public View getSelectedView() {
 		return (mCurrentBufferIndex < mLoadedViews.size() ? mLoadedViews
@@ -514,8 +510,11 @@ public class ViewFlow extends AdapterView<Adapter> {
 	public void setSelection(int position) {
 		mNextScreen = INVALID_SCREEN;
 		mScroller.forceFinished(true);
-		if (mAdapter == null || position >= mAdapter.getCount())
+		if (mAdapter == null)
 			return;
+		
+		position = Math.max(position, 0);
+		position =  Math.min(position, mAdapter.getCount()-1);
 
 		ArrayList<View> recycleViews = new ArrayList<View>();
 		View recycleView;
@@ -524,13 +523,22 @@ public class ViewFlow extends AdapterView<Adapter> {
 			detachViewFromParent(recycleView);
 		}
 
-		for (int i = Math.max(0, position - mSideBuffer); i < Math.min(
-				mAdapter.getCount(), position + mSideBuffer + 1); i++) {
-			mLoadedViews.addLast(makeAndAddView(i, true,
-					(recycleViews.isEmpty() ? null : recycleViews.remove(0))));
-			if (i == position)
-				mCurrentBufferIndex = mLoadedViews.size() - 1;
+		View currentView = makeAndAddView(position, true,
+				(recycleViews.isEmpty() ? null : recycleViews.remove(0)));
+		mLoadedViews.addLast(currentView);
+		
+		for(int offset = 1; mSideBuffer - offset >= 0; offset++) {
+			int leftIndex = position - offset;
+			int rightIndex = position + offset;
+			if(leftIndex >= 0)
+				mLoadedViews.addFirst(makeAndAddView(leftIndex, false,
+						(recycleViews.isEmpty() ? null : recycleViews.remove(0))));
+			if(rightIndex < mAdapter.getCount())
+				mLoadedViews.addLast(makeAndAddView(rightIndex, true,
+						(recycleViews.isEmpty() ? null : recycleViews.remove(0))));
 		}
+
+		mCurrentBufferIndex = mLoadedViews.indexOf(currentView);
 		mCurrentAdapterIndex = position;
 
 		for (View view : recycleViews) {
